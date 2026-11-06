@@ -1,0 +1,16 @@
+# Installed Node packages (recreated by npm install)
+node_modules/
+
+# Local machine settings and secrets
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Logs and temporary files
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+coverage/
