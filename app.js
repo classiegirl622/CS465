@@ -2,29 +2,56 @@
 
 const express = require("express");
 const path = require("node:path");
+const hbs = require("hbs");
+
+const indexRouter = require("./app_server/routes/index");
+const travelerRouter = require("./app_server/routes/traveler");
+const pagesRouter = require("./app_server/routes/pages");
+const { viewModel } = require("./app_server/models/site");
 
 const app = express();
-const publicDirectory = path.join(__dirname, "public");
+const viewsPath = path.join(__dirname, "app_server", "views");
 
-// Express serves index.html automatically at / and makes all website assets
-// available at URLs such as /css/style.css and /images/logo.png.
-app.use(express.static(publicDirectory));
+// MVC: routes -> controllers -> presentation model -> Handlebars views.
+app.set("views", viewsPath);
+app.set("view engine", "hbs");
+// hbs.registerPartials is asynchronous. Wait for registration so even the first
+// request can resolve the shared partials and partial-block layout reliably.
+const partialsReady = Promise.all(
+  ["partials", "layouts"].map((folder) => new Promise((resolve, reject) => {
+    hbs.registerPartials(path.join(viewsPath, folder), (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  }))
+);
 
-// An additional endpoint provides an easy input/output server test.
-app.get("/health", (_request, response) => {
-  response.status(200).json({ status: "ok", application: "Travlr Getaways" });
+app.use((_req, _res, next) => {
+  partialsReady.then(() => next(), next);
 });
 
-app.use((_request, response) => {
-  response.status(404).send("Page not found");
+app.use(express.urlencoded({ extended: false }));
+// CSS and images remain static, but all pages now render via the HBS engine.
+app.use(express.static(path.join(__dirname, "public"), { index: false }));
+
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok", application: "Travlr Getaways" });
 });
 
-// Export app for smoke tests without opening a second fixed-port listener.
+// The traveler controller is registered under /travel as required by Module Two.
+app.use("/", indexRouter);
+app.use("/travel", travelerRouter);
+app.use("/", pagesRouter);
+
+app.use((_req, res) => {
+  res.status(404).render("not-found", viewModel(null));
+});
+
 module.exports = app;
 
 if (require.main === module) {
   const port = Number.parseInt(process.env.PORT, 10) || 3000;
   app.listen(port, () => {
-    console.log(`Travlr Getaways Express server running at http://localhost:${port}`);
+    console.log(`Travlr Getaways MVC + HBS server running at http://localhost:${port}`);
   });
 }

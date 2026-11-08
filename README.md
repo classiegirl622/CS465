@@ -1,110 +1,121 @@
-# Travlr Getaways — CS 465 Module One
+# CS 465 Module Two — Travlr Getaways MVC + Handlebars
 
-This is the **customer-facing static website shell** served by **Node.js + Express**. It is based on the `travlr.zip` mockup supplied with the assignment. The Module One rubric does **not** require MongoDB or Angular yet.
+This is the **Module Two continuation** of the Module One Express website. The static HTML mockup has been reorganized into an MVC-style application, with shared Handlebars layouts/partials, routes, controllers, and a small presentation model. All seven original website pages retain the supplied CSS and images.
 
 ## Requirements
 
-- Node.js 18 or newer (includes npm)
-- An internet connection the first time you install Express
+- Node.js 18+ and npm
+- A network connection to install Express and `hbs` dependencies
 
-## Run it locally in VS Code on Windows
+## How to run on Windows (PowerShell / VS Code)
 
-1. Extract the ZIP file. Open the extracted **`travlr`** folder in Visual Studio Code (**File > Open Folder**).
-2. Open the integrated terminal (**Terminal > New Terminal**).
+1. Extract this ZIP and open the inner `travlr` directory in VS Code.
+2. Open a PowerShell terminal **inside that directory** (the one containing `package.json`).
 3. Run:
 
    ```powershell
-   node --version
-   npm --version
    npm install
    npm start
    ```
 
-4. Look for the terminal message:
+4. Visit **http://localhost:3000/** for the homepage, and **http://localhost:3000/travel** for the required traveler controller and HBS template demonstration. Navigation works for all seven pages.
+5. Keep the server running. In a **second terminal** in the same directory, run:
 
-   ```text
-   Travlr Getaways Express server running at http://localhost:3000
+   ```powershell
+   npm test
    ```
 
-5. Open **http://localhost:3000** in your browser. Test Travel, Rooms, Meals, News, About, and Contact through the navigation bar. Your browser should show the Travlr Getaways homepage with the existing CSS and images.
-6. For additional server input/output verification, open **http://localhost:3000/health**. Expected JSON:
+6. To stop the server, press `Ctrl+C` in the server terminal.
 
-   ```json
-   {"status":"ok","application":"Travlr Getaways"}
-   ```
+If you get `ENOENT ... package.json`, run `pwd` and `dir package.json`, then `cd` to the folder containing `package.json` before trying npm again.
 
-7. Stop the server with `Ctrl+C` in the terminal.
-
-> **Do not double-click `public/index.html` as your server test.** The assignment requires the site to be served over `http://localhost:3000` by Express.
-
-## Test the project
-
-After `npm install`, run:
-
-```powershell
-npm test
-```
-
-The tests verify that the home page, all seven HTML pages, CSS, logo, `/health`, and missing-page handling respond correctly through the Express server.
-
-## Take the screenshot required by the rubric
-
-1. Start the Express server using `npm start`.
-2. Arrange your **browser showing `http://localhost:3000` in its address bar** alongside your **VS Code terminal showing the successful Express server startup message**.
-3. Take a screenshot with `Win+Shift+S`, save it as `module1-express-working.png` or another clear filename, and submit it separately from this ZIP unless your instructor instructs otherwise.
-4. A `file:///.../index.html` browser address is **not** proof of Express server operation.
-
-## GitHub: create and push the `module1` branch
-
-To follow the assignment's required Git workflow, first **clone the course repository** supplied to you by GitHub/SNHU and create a local branch **before adding the files**:
-
-```powershell
-git clone YOUR_GITHUB_REPOSITORY_URL
-cd YOUR_REPOSITORY_FOLDER
-git switch -c module1
-```
-
-Copy the contents of this `travlr` folder (`app.js`, `package.json`, `public`, `tests`, `.gitignore`, `README.md`) to the target website folder inside your local Git clone. If you copy the files to a subfolder, use `cd` to enter that folder for `npm install` and `npm start`.
-
-Run `npm install` to generate `package-lock.json`. Then, from the **repository root**:
-
-```powershell
-git status
-git add .
-git commit -m "Complete CS 465 Module One Express website"
-git push -u origin module1
-```
-
-If `module1` already exists, run `git switch module1` instead of `git switch -c module1`. **Do not commit `node_modules/`** (it is excluded via `.gitignore`).
-
-## Project layout
+## MVC design
 
 ```text
 travlr/
-├── app.js                 Express application/server
-├── package.json           Dependencies and npm scripts
-├── .gitignore             Excludes node_modules and local files
-├── README.md              Setup, tests, screenshot and GitHub instructions
-├── tests/
-│   └── server.test.js     Automated Express smoke tests
-└── public/                Original client-facing website
-    ├── index.html
-    ├── travel.html
-    ├── rooms.html
-    ├── meals.html
-    ├── news.html
-    ├── about.html
-    ├── contact.html
-    ├── css/style.css
-    └── images/             Original images
+├── app.js                        Express entry, HBS registration, router mounting
+├── package.json                  Express and hbs dependencies
+├── app_server/
+│   ├── models/
+│   │   └── site.js               Presentation model: site metadata and navigation
+│   ├── controllers/
+│   │   ├── main.js               Homepage controller
+│   │   ├── traveler.js           Travel page controller
+│   │   ├── travel.js             Alias for later course guide compatibility
+│   │   └── pages.js              Other customer-facing page controllers
+│   ├── routes/
+│   │   ├── index.js              GET /
+│   │   ├── traveler.js           GET /travel
+│   │   └── pages.js              Other routes and legacy .html redirects
+│   └── views/
+│       ├── layouts/layout.hbs    Shared HTML page skeleton
+│       ├── partials/header.hbs   Shared logo/navigation
+│       ├── partials/footer.hbs   Shared footer/navigation
+│       ├── index.hbs             Homepage view
+│       ├── travel.hbs            Travel view (original trips preserved)
+│       ├── rooms.hbs             Rooms view
+│       ├── meals.hbs             Meals view
+│       ├── news.hbs              News view
+│       ├── about.hbs             About view
+│       ├── contact.hbs           Contact view
+│       └── not-found.hbs         404 view
+├── public/
+│   ├── css/style.css            Original stylesheet
+│   └── images/                  Original website images
+└── tests/server.test.js         HTTP and template-rendering tests
 ```
 
-## Changes to the provided mockup
+The MVC flow is **HTTP request -> router -> controller -> presentation model -> Handlebars view -> rendered HTML response**. Header/footer navigation uses `{{#each navigation}}` and `{{#if isCurrent}}`; individual pages use the `{{#> layout}}...{{/layout}}` partial-block directive. The master layout uses `{{> header}}`, `{{> @partial-block}}`, and `{{> footer}}`.
 
-- Copied all seven pages, CSS, and supplied images into `public/`.
-- Fixed the homepage image links referencing nonexistent `dives.html` and `foods.html`: they now link to `travel.html` and `meals.html`.
-- Corrected invalid curly quotation marks in several `travel.html` HTML link attributes.
-- Updated the mismatched travel page title and footer to Travlr Getaways.
-- Added a minimal Express server and automated smoke tests.
+**Module Three note:** Trip descriptions remain hardcoded in `travel.hbs`. Module Three will replace them with JSON + `{{#each trips}}`, then MongoDB is introduced in later modules. This assignment does not require Angular or MongoDB.
 
-No actual Express run or GitHub push has been performed as part of creating the ZIP. The Express dependency must be downloaded with `npm install` and launched on your local machine before you take the assignment screenshot.
+## Moving Module Two into your existing GitHub repository
+
+Your prior Module One project was committed to `module1` in `C:\Users\ronda\Documents\CS465_GitHub`.
+Keep that branch intact and create Module Two from it **before copying these files**.
+
+```powershell
+cd "$HOME\Documents\CS465_GitHub"
+git fetch origin
+git switch module1
+git pull --ff-only origin module1
+git switch -c module2
+```
+
+If `module2` already exists locally, use `git switch module2` instead of creating it again.
+
+Extract the ZIP to `$HOME\Documents\CS465_Module2`, so its files are in `$HOME\Documents\CS465_Module2\travlr`. Then copy the project into the GitHub clone (without `.git` or `node_modules`):
+
+```powershell
+robocopy "$HOME\Documents\CS465_Module2\travlr" "$HOME\Documents\CS465_GitHub" /E /XD .git node_modules
+```
+
+Robocopy may exit with code 1 even on success; check the `FAILED` column in its summary. Remove the original static HTML copies from the cloned `public` folder, otherwise the old `/travel.html` will bypass HBS when served as a static file:
+
+```powershell
+Remove-Item "$HOME\Documents\CS465_GitHub\public\*.html" -ErrorAction SilentlyContinue
+cd "$HOME\Documents\CS465_GitHub"
+npm install
+npm test
+npm start
+```
+
+Take a screenshot of your locally rendered **http://localhost:3000/travel** page next to the successful terminal output if you want to document your test. Module Two's stated submission is the project ZIP.
+
+In a second terminal (or stop `npm start` with `Ctrl+C`), commit and push:
+
+```powershell
+cd "$HOME\Documents\CS465_GitHub"
+git status
+git add .
+git commit -m "Complete CS 465 Module Two MVC and HBS"
+git push -u origin module2
+```
+
+**Submitting:** Upload this ZIP file to Brightspace. It already includes `app_server` and the updated Express project. Do not include your `node_modules` directory. `package-lock.json` will be regenerated by `npm install` because the HBS dependency has been added to the Module One application.
+
+## Scope notes
+
+- Legacy `.html` page links redirect to the new controller routes (for example, `/travel.html` redirects to `/travel`).
+- The contact form is still only a coursework demo; it returns an explanation rather than sending email.
+- The original Travlr mockup's filler text remains in place to match Module One and the provided design.
