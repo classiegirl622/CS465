@@ -1,8 +1,8 @@
 {
-  "name": "travlr-getaways-module2",
-  "version": "2.0.0",
+  "name": "travlr-getaways-module3",
+  "version": "3.0.0",
   "private": true,
-  "description": "CS 465 Module Two MVC routing and Handlebars templates",
+  "description": "CS 465 Module Three dynamic JSON trip rendering with Express MVC and HBS",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",

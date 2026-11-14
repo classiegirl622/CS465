@@ -92,3 +92,55 @@ test("unknown paths return a rendered HTTP 404", async () => {
   assert.equal(response.status, 404);
   assert.match(html, /Page Not Found/);
 });
+
+
+test("Module Three trips.json contains valid trip records and matching image assets", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const root = path.join(__dirname, "..");
+  const trips = JSON.parse(fs.readFileSync(path.join(root, "data", "trips.json"), "utf8"));
+  assert.equal(Array.isArray(trips), true);
+  assert.equal(trips.length, 3);
+  for (const trip of trips) {
+    for (const field of ["code", "name", "length", "start", "resort", "perPerson", "image", "description"]) {
+      assert.equal(typeof trip[field], "string", `Missing ${field} in ${trip.name}`);
+      assert.ok(trip[field].length > 0, `Empty ${field} in ${trip.name}`);
+    }
+    assert.ok(trip.description.includes(trip.name), `Trip description should name ${trip.name}`);
+    assert.ok(fs.existsSync(path.join(root, "public", "images", trip.image)), `Missing image ${trip.image}`);
+  }
+});
+
+test("Travel page dynamically renders all trip titles and descriptions from JSON", async () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const trips = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "trips.json"), "utf8"));
+  const { response, html } = await loadPage("/travel");
+  assert.equal(response.status, 200);
+  const list = html.match(/<ul id="sites">([\s\S]*?)<\/ul>/);
+  assert.ok(list, "Expected the trips list");
+  assert.equal((list[1].match(/<li>/g) || []).length, trips.length);
+  for (const trip of trips) {
+    assert.ok(html.includes(trip.name.replace(/'/g, "&#x27;")) || html.includes(trip.name.replace(/'/g, "&#39;")) || html.includes(trip.name), `Missing trip ${trip.name}`);
+    assert.ok(html.includes(trip.description.split(": ")[1].slice(0, 30)));
+    assert.ok(html.includes(`/images/${trip.image}`));
+  }
+});
+
+test("Travel page updates when trips.json changes without restarting Express", async () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const jsonPath = path.join(__dirname, "..", "data", "trips.json");
+  const original = fs.readFileSync(jsonPath, "utf8");
+  try {
+    const trips = JSON.parse(original);
+    trips[0].name = "Module Three Dynamic Test Destination";
+    trips[0].description = "Module Three Dynamic Test Destination from JSON";
+    fs.writeFileSync(jsonPath, JSON.stringify(trips, null, 2), "utf8");
+    const { response, html } = await loadPage("/travel");
+    assert.equal(response.status, 200);
+    assert.match(html, /Module Three Dynamic Test Destination/);
+  } finally {
+    fs.writeFileSync(jsonPath, original, "utf8");
+  }
+});

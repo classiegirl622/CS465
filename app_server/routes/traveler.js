@@ -2,8 +2,9 @@
 
 const express = require("express");
 const router = express.Router();
-const travelerController = require("../controllers/traveler");
+const travelController = require("../controllers/travel");
 
-router.get("/", travelerController.travel);
+// MVC route: GET /travel -> controller -> JSON -> travel.hbs
+router.get("/", travelController.travel);
 
 module.exports = router;

@@ -1,121 +1,86 @@
-# CS 465 Module Two — Travlr Getaways MVC + Handlebars
+# CS 465 Module Three — Travlr Getaways (MVC + JSON + Handlebars)
 
-This is the **Module Two continuation** of the Module One Express website. The static HTML mockup has been reorganized into an MVC-style application, with shared Handlebars layouts/partials, routes, controllers, and a small presentation model. All seven original website pages retain the supplied CSS and images.
+This project continues the **Module Two** Express MVC + HBS implementation. For Module Three, the Travel page now reads vacation trips from `data/trips.json` and generates its cards with the `{{#each trips}}` Handlebars directive. All seven customer-facing pages, shared layout and partials, stylesheet, and image assets are preserved.
 
-## Requirements
+## Windows / VS Code — run and test
 
-- Node.js 18+ and npm
-- A network connection to install Express and `hbs` dependencies
+Open the `travlr` folder (the folder that contains `package.json`) in VS Code, then use the PowerShell terminal:
 
-## How to run on Windows (PowerShell / VS Code)
-
-1. Extract this ZIP and open the inner `travlr` directory in VS Code.
-2. Open a PowerShell terminal **inside that directory** (the one containing `package.json`).
-3. Run:
-
-   ```powershell
-   npm install
-   npm start
-   ```
-
-4. Visit **http://localhost:3000/** for the homepage, and **http://localhost:3000/travel** for the required traveler controller and HBS template demonstration. Navigation works for all seven pages.
-5. Keep the server running. In a **second terminal** in the same directory, run:
-
-   ```powershell
-   npm test
-   ```
-
-6. To stop the server, press `Ctrl+C` in the server terminal.
-
-If you get `ENOENT ... package.json`, run `pwd` and `dir package.json`, then `cd` to the folder containing `package.json` before trying npm again.
-
-## MVC design
-
-```text
-travlr/
-├── app.js                        Express entry, HBS registration, router mounting
-├── package.json                  Express and hbs dependencies
-├── app_server/
-│   ├── models/
-│   │   └── site.js               Presentation model: site metadata and navigation
-│   ├── controllers/
-│   │   ├── main.js               Homepage controller
-│   │   ├── traveler.js           Travel page controller
-│   │   ├── travel.js             Alias for later course guide compatibility
-│   │   └── pages.js              Other customer-facing page controllers
-│   ├── routes/
-│   │   ├── index.js              GET /
-│   │   ├── traveler.js           GET /travel
-│   │   └── pages.js              Other routes and legacy .html redirects
-│   └── views/
-│       ├── layouts/layout.hbs    Shared HTML page skeleton
-│       ├── partials/header.hbs   Shared logo/navigation
-│       ├── partials/footer.hbs   Shared footer/navigation
-│       ├── index.hbs             Homepage view
-│       ├── travel.hbs            Travel view (original trips preserved)
-│       ├── rooms.hbs             Rooms view
-│       ├── meals.hbs             Meals view
-│       ├── news.hbs              News view
-│       ├── about.hbs             About view
-│       ├── contact.hbs           Contact view
-│       └── not-found.hbs         404 view
-├── public/
-│   ├── css/style.css            Original stylesheet
-│   └── images/                  Original website images
-└── tests/server.test.js         HTTP and template-rendering tests
+```powershell
+npm install
+npm test
+npm start
 ```
 
-The MVC flow is **HTTP request -> router -> controller -> presentation model -> Handlebars view -> rendered HTML response**. Header/footer navigation uses `{{#each navigation}}` and `{{#if isCurrent}}`; individual pages use the `{{#> layout}}...{{/layout}}` partial-block directive. The master layout uses `{{> header}}`, `{{> @partial-block}}`, and `{{> footer}}`.
+Open `http://localhost:3000/travel` in your browser. Check that **Gale Reef**, **Dawson's Reef**, and **Claire's Reef** appear with photos and that each description starts with the trip name. Navigate to `http://localhost:3000/` to verify the original homepage is intact.
 
-**Module Three note:** Trip descriptions remain hardcoded in `travel.hbs`. Module Three will replace them with JSON + `{{#each trips}}`, then MongoDB is introduced in later modules. This assignment does not require Angular or MongoDB.
+`npm test` includes the eight previous Module Two tests plus three new Module Three tests for the JSON trip fields, generated HTML, and a temporary JSON modification to prove refresh updates the page. The modification test restores `trips.json` in its `finally` block. The tests require dependencies installed through `npm install`.
 
-## Moving Module Two into your existing GitHub repository
+If `npm` reports `ENOENT package.json`, you are in the wrong directory. Check `pwd` and `dir package.json`.
 
-Your prior Module One project was committed to `module1` in `C:\Users\ronda\Documents\CS465_GitHub`.
-Keep that branch intact and create Module Two from it **before copying these files**.
+## Module Three MVC flow
+
+```text
+GET /travel
+    -> app.js mounts /travel router
+    -> app_server/routes/traveler.js
+    -> app_server/controllers/travel.js
+    -> data/trips.json (parsed to a JavaScript array)
+    -> res.render('travel', viewModel('travel', { trips }))
+    -> app_server/views/travel.hbs: {{#each trips}} generates trip cards
+    -> app_server/views/layouts/layout.hbs and header/footer partials
+    -> rendered HTML response
+```
+
+## Files changed from Module Two
+
+- `data/trips.json` — **new** trip array, with schema-compatible fields `code`, `name`, `length`, `start`, `resort`, `perPerson`, `image`, `description`, plus optional `details`. Travel package labels/dates/prices are example data used to demonstrate the structure, not published booking offers.
+- `app_server/controllers/travel.js` — parses the JSON using `fs.readFileSync` and passes the `trips` array to `res.render`.
+- `app_server/controllers/traveler.js` — backwards-compatible alias.
+- `app_server/routes/traveler.js` — uses the canonical travel controller.
+- `app_server/views/travel.hbs` — `{{#each trips}}` data binding; no hardcoded trip cards.
+- `tests/server.test.js` — automated data and MVC rendering tests.
+- `package.json` — Module Three metadata; npm dependencies unchanged.
+
+Using the local filesystem on each request is appropriate for this assignment's JSON prototyping. A database connection will be introduced in Module Four. MongoDB and Angular are not needed to complete Module Three.
+
+## Push the `module3` branch into your existing GitHub repo
+
+If your previously pushed Module Two is in `C:\Users\ronda\Documents\CS465_GitHub`, **do not clone or initialize a new repository**. Open PowerShell:
 
 ```powershell
 cd "$HOME\Documents\CS465_GitHub"
-git fetch origin
-git switch module1
-git pull --ff-only origin module1
-git switch -c module2
+git switch module2
+git status
+git switch -c module3
 ```
 
-If `module2` already exists locally, use `git switch module2` instead of creating it again.
-
-Extract the ZIP to `$HOME\Documents\CS465_Module2`, so its files are in `$HOME\Documents\CS465_Module2\travlr`. Then copy the project into the GitHub clone (without `.git` or `node_modules`):
+Before switching, confirm the working tree is clean (or commit any existing work). Extract this ZIP so the files appear in a `travlr` folder, then copy into the clone from wherever you extracted it:
 
 ```powershell
-robocopy "$HOME\Documents\CS465_Module2\travlr" "$HOME\Documents\CS465_GitHub" /E /XD .git node_modules
-```
-
-Robocopy may exit with code 1 even on success; check the `FAILED` column in its summary. Remove the original static HTML copies from the cloned `public` folder, otherwise the old `/travel.html` will bypass HBS when served as a static file:
-
-```powershell
-Remove-Item "$HOME\Documents\CS465_GitHub\public\*.html" -ErrorAction SilentlyContinue
+robocopy "C:\PATH\TO\EXTRACTED\travlr" "$HOME\Documents\CS465_GitHub" /E /XD .git node_modules
 cd "$HOME\Documents\CS465_GitHub"
 npm install
 npm test
 npm start
 ```
 
-Take a screenshot of your locally rendered **http://localhost:3000/travel** page next to the successful terminal output if you want to document your test. Module Two's stated submission is the project ZIP.
+Test in a browser, stop the server with Ctrl+C, and push:
 
-In a second terminal (or stop `npm start` with `Ctrl+C`), commit and push:
+```powershell
+git add .
+git commit -m "Complete CS 465 Module Three JSON-powered travel page"
+git push -u origin module3
+```
+
+To create the assignment ZIP from the repo folder (without dependencies or Git metadata):
 
 ```powershell
 cd "$HOME\Documents\CS465_GitHub"
-git status
-git add .
-git commit -m "Complete CS 465 Module Two MVC and HBS"
-git push -u origin module2
+$dest = "$HOME\Documents\travlr_submission\travlr"
+New-Item -ItemType Directory -Path $dest -Force | Out-Null
+robocopy . $dest /E /XD .git node_modules .vscode
+Compress-Archive -Path $dest -DestinationPath "$HOME\Documents\travlr.zip" -Force
 ```
 
-**Submitting:** Upload this ZIP file to Brightspace. It already includes `app_server` and the updated Express project. Do not include your `node_modules` directory. `package-lock.json` will be regenerated by `npm install` because the HBS dependency has been added to the Module One application.
-
-## Scope notes
-
-- Legacy `.html` page links redirect to the new controller routes (for example, `/travel.html` redirects to `/travel`).
-- The contact form is still only a coursework demo; it returns an explanation rather than sending email.
-- The original Travlr mockup's filler text remains in place to match Module One and the provided design.
+Check the archive includes `travlr/data/trips.json` and the `app_server` folder. Upload `travlr.zip` to the course submission.
