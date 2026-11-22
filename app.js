@@ -7,6 +7,8 @@ const hbs = require("hbs");
 const indexRouter = require("./app_server/routes/index");
 const travelerRouter = require("./app_server/routes/traveler");
 const pagesRouter = require("./app_server/routes/pages");
+const apiRouter = require("./app_server/routes/api");
+const database = require("./app_server/models/db");
 const { viewModel } = require("./app_server/models/site");
 
 const app = express();
@@ -41,6 +43,7 @@ app.get("/health", (_req, res) => {
 // The traveler controller is registered under /travel as required by Module Two.
 app.use("/", indexRouter);
 app.use("/travel", travelerRouter);
+app.use("/api", apiRouter);
 app.use("/", pagesRouter);
 
 app.use((_req, res) => {
@@ -51,7 +54,22 @@ module.exports = app;
 
 if (require.main === module) {
   const port = Number.parseInt(process.env.PORT, 10) || 3000;
-  app.listen(port, () => {
-    console.log(`Travlr Getaways MVC + HBS server running at http://localhost:${port}`);
+  // Connect before listening so API requests only run against a ready database.
+  database.connect().then(() => {
+    const server = app.listen(port, () => {
+      console.log(`Travlr Getaways running at http://localhost:${port}`);
+      console.log(`JSON trips: http://localhost:${port}/api/trips`);
+    });
+    async function stop() {
+      server.close();
+      try { await database.disconnect(); } catch (error) { console.error(error); }
+      process.exit(0);
+    }
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  }).catch((error) => {
+    console.error("Could not start Travlr: MongoDB connection failed.", error.message);
+    console.error("Check that MongoDB Community Server is running at 127.0.0.1:27017.");
+    process.exitCode = 1;
   });
 }
